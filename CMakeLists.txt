@@ -76,8 +76,26 @@ else()
     set_target_properties(journal_static PROPERTIES OUTPUT_NAME journal)
 endif()
 
+add_executable(journal_cli
+    apps/journal_cli/main.cpp
+    apps/journal_cli/input_parser.cpp
+    apps/journal_cli/journal_application.cpp
+)
+target_compile_features(journal_cli PRIVATE cxx_std_17)
+target_link_libraries(journal_cli PRIVATE Journal::static)
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(journal_cli PRIVATE
+        -Wall
+        -Wextra
+        -Wpedantic
+        -Wconversion
+        -Wsign-conversion
+    )
+endif()
+
 include(GNUInstallDirs)
-install(TARGETS journal_static journal_shared
+install(TARGETS journal_static journal_shared journal_cli
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -105,4 +123,27 @@ if(JOURNAL_BUILD_TESTS)
     endif()
 
     add_test(NAME journal_tests COMMAND journal_tests)
+
+    add_executable(journal_cli_tests
+        tests/journal_cli_tests.cpp
+        apps/journal_cli/input_parser.cpp
+        apps/journal_cli/journal_application.cpp
+    )
+    target_compile_features(journal_cli_tests PRIVATE cxx_std_17)
+    target_include_directories(journal_cli_tests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/apps/journal_cli
+    )
+    target_link_libraries(journal_cli_tests PRIVATE Journal::static)
+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(journal_cli_tests PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+            -Wconversion
+            -Wsign-conversion
+        )
+    endif()
+
+    add_test(NAME journal_cli_tests COMMAND journal_cli_tests)
 endif()
