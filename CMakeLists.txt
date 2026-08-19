@@ -12,6 +12,7 @@ find_package(Threads REQUIRED)
 
 add_library(journal_objects OBJECT
     src/file_logger.cpp
+    src/socket_logger.cpp
 )
 
 set_target_properties(journal_objects PROPERTIES
@@ -43,7 +44,10 @@ target_include_directories(journal_static PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 target_compile_features(journal_static PUBLIC cxx_std_17)
-target_link_libraries(journal_static PUBLIC Threads::Threads)
+target_link_libraries(journal_static PUBLIC
+    Threads::Threads
+    $<$<PLATFORM_ID:Windows>:ws2_32>
+)
 
 add_library(journal_shared SHARED
     $<TARGET_OBJECTS:journal_objects>
@@ -59,7 +63,10 @@ target_include_directories(journal_shared PUBLIC
     $<INSTALL_INTERFACE:include>
 )
 target_compile_features(journal_shared PUBLIC cxx_std_17)
-target_link_libraries(journal_shared PUBLIC Threads::Threads)
+target_link_libraries(journal_shared PUBLIC
+    Threads::Threads
+    $<$<PLATFORM_ID:Windows>:ws2_32>
+)
 
 # On Windows a DLL also produces an import library. Give the real static
 # library another name so that both .lib files can coexist in one directory.
@@ -82,6 +89,7 @@ if(JOURNAL_BUILD_TESTS)
 
     add_executable(journal_tests
         tests/file_logger_tests.cpp
+        tests/socket_logger_tests.cpp
     )
     target_compile_features(journal_tests PRIVATE cxx_std_17)
     target_link_libraries(journal_tests PRIVATE Journal::static)

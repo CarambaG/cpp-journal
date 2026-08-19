@@ -11,9 +11,9 @@
 
 namespace fs = std::filesystem;
 
-namespace {
-
 std::atomic<int> failures{0};
+
+namespace {
 
 #define CHECK(condition)                                                        \
     do {                                                                        \
@@ -139,7 +139,7 @@ void testConcurrentWrites(const fs::path& directory) {
     threads.reserve(threadCount);
 
     for (int threadIndex = 0; threadIndex < threadCount; ++threadIndex) {
-        threads.emplace_back([&logger, threadIndex, messagesPerThread]() {
+        threads.emplace_back([&logger, threadIndex]() {
             for (int messageIndex = 0; messageIndex < messagesPerThread;
                  ++messageIndex) {
                 const std::string message =
@@ -161,6 +161,8 @@ void testConcurrentWrites(const fs::path& directory) {
 
 }  // namespace
 
+void runSocketLoggerTests();
+
 int main() {
     const fs::path testDirectory =
         fs::current_path() / "journal-test-output";
@@ -180,6 +182,7 @@ int main() {
     testAppendsAndEscapesMessages(testDirectory);
     testReportsInvalidStateAndLevel(testDirectory);
     testConcurrentWrites(testDirectory);
+    runSocketLoggerTests();
 
     fs::remove_all(testDirectory, error);
 
