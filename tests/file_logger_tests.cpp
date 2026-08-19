@@ -139,7 +139,7 @@ void testConcurrentWrites(const fs::path& directory) {
     threads.reserve(threadCount);
 
     for (int threadIndex = 0; threadIndex < threadCount; ++threadIndex) {
-        threads.emplace_back([&logger, threadIndex]() {
+        threads.emplace_back([&logger, threadIndex, messagesPerThread]() {
             for (int messageIndex = 0; messageIndex < messagesPerThread;
                  ++messageIndex) {
                 const std::string message =
