@@ -94,6 +94,45 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     )
 endif()
 
+if(UNIX)
+    add_library(journal_stats_core STATIC
+        apps/journal_stats/log_record.cpp
+        apps/journal_stats/statistics.cpp
+        apps/journal_stats/tcp_statistics_server.cpp
+    )
+    target_compile_features(journal_stats_core PUBLIC cxx_std_17)
+    target_include_directories(journal_stats_core PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/apps/journal_stats
+    )
+    target_link_libraries(journal_stats_core PUBLIC
+        Journal::static
+        Threads::Threads
+    )
+
+    add_executable(journal_stats
+        apps/journal_stats/main.cpp
+    )
+    target_compile_features(journal_stats PRIVATE cxx_std_17)
+    target_link_libraries(journal_stats PRIVATE journal_stats_core)
+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(journal_stats_core PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+            -Wconversion
+            -Wsign-conversion
+        )
+        target_compile_options(journal_stats PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+            -Wconversion
+            -Wsign-conversion
+        )
+    endif()
+endif()
+
 include(GNUInstallDirs)
 install(TARGETS journal_static journal_shared journal_cli
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
@@ -101,6 +140,12 @@ install(TARGETS journal_static journal_shared journal_cli
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+if(UNIX)
+    install(TARGETS journal_stats
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    )
+endif()
 
 if(JOURNAL_BUILD_TESTS)
     enable_testing()
@@ -146,4 +191,27 @@ if(JOURNAL_BUILD_TESTS)
     endif()
 
     add_test(NAME journal_cli_tests COMMAND journal_cli_tests)
+
+    if(UNIX)
+        add_executable(journal_stats_tests
+            tests/journal_stats_tests.cpp
+        )
+        target_compile_features(journal_stats_tests PRIVATE cxx_std_17)
+        target_link_libraries(journal_stats_tests PRIVATE
+            journal_stats_core
+            Threads::Threads
+        )
+
+        if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+            target_compile_options(journal_stats_tests PRIVATE
+                -Wall
+                -Wextra
+                -Wpedantic
+                -Wconversion
+                -Wsign-conversion
+            )
+        endif()
+
+        add_test(NAME journal_stats_tests COMMAND journal_stats_tests)
+    endif()
 endif()
